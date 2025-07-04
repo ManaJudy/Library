@@ -13,6 +13,9 @@ public class DailyTaskService {
     @Autowired
     private MemberService memberService;
 
+    @Autowired
+    private ReservationService reservationService;
+
     @Scheduled(cron = "0 0 0 * * ?")
     public void performDailyUpdate() {
         List<Member> members = memberService.findMembers();
@@ -22,5 +25,14 @@ public class DailyTaskService {
             member.setActive(memberService.shouldBanMember(member));
         });
         memberService.saveMembers(members);
+
+        // Traitement des réservations expirées
+        reservationService.processExpiredReservations();
+    }
+
+    @Scheduled(cron = "0 0 9 * * ?") // Tous les jours à 9h
+    public void checkAvailableReservations() {
+        // Vérifier les réservations qui peuvent être notifiées
+        reservationService.notifyAvailableReservations();
     }
 }

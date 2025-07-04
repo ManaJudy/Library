@@ -3,9 +3,9 @@ package com.mana.library.service;
 
 import com.mana.library.entity.Loan;
 import com.mana.library.entity.Member;
-import com.mana.library.exeptionhandler.exeption.EmailAlreadyUsedException;
-import com.mana.library.exeptionhandler.exeption.EntityNotFoundException;
-import com.mana.library.exeptionhandler.exeption.PenalityFoundException;
+import com.mana.library.exceptionhandler.exception.EmailAlreadyUsedException;
+import com.mana.library.exceptionhandler.exception.EntityNotFoundException;
+import com.mana.library.exceptionhandler.exception.PenalityFoundException;
 import com.mana.library.repository.LoanRepository;
 
 import com.mana.library.repository.MemberRepository;
@@ -51,7 +51,7 @@ public class MemberService {
 
     public double calculatePenality(Member member) {
         double penalty = 0.0;
-        List<Loan> loans = loanRepository.findAllByMemberAndReturnedFalse(member);
+        List<Loan> loans = loanRepository.findAllByMemberInLoanAndReturnedFalse(member);
         LocalDate today = LocalDate.now();
         for (Loan loan : loans)
             if (loan.getReturnDate().isBefore(today)) {
@@ -71,7 +71,7 @@ public class MemberService {
 
     public boolean shouldBanMember(Member member) {
         LocalDate today = LocalDate.now();
-        List<Loan> loans = loanRepository.findAllByMemberAndReturnedFalse(member);
+        List<Loan> loans = loanRepository.findAllByMemberInLoanAndReturnedFalse(member);
         return loans.stream().filter(loan -> loan.getReturnDate().isBefore(today))
                 .anyMatch(loan -> ChronoUnit.DAYS.between(loan.getReturnDate(), today) > 30);
     }

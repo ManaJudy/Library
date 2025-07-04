@@ -24,5 +24,9 @@ public class Loan {
 
     private LocalDate returnDate;
 
-    private boolean returned;
+    private boolean returned = true;
+
+    @ManyToOne
+    @JoinColumn(name = "loan_type_id", nullable = false)
+    private LoanType loanType;
 }
