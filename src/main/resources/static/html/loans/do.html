@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Effectuer un Prêt - Bibliothèque</title>
+    <link rel="stylesheet" href="/css/modern-style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                <h1>📋 Effectuer un Prêt</h1>
+                <p>Créez un nouveau prêt de livre pour un membre</p>
+            </div>
+
+            <form id="loanForm">
+                <div class="form-group">
+                    <label for="memberId">👤 Membre</label>
+                    <select id="memberId" name="memberId" class="form-control" required>
+                        <option value="">Sélectionnez un membre...</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="bookId">📚 Livre</label>
+                    <select id="bookId" name="bookId" class="form-control" required>
+                        <option value="">Sélectionnez un livre...</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="loanTypeId">⏰ Type de Prêt</label>
+                    <select id="loanTypeId" name="loanTypeId" class="form-control" required>
+                        <option value="">Sélectionnez un type de prêt...</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="submitBtn">
+                    <span class="loading" id="loadingSpinner" style="display: none;">
+                        <span class="spinner"></span>
+                        Traitement en cours...
+                    </span>
+                    <span id="submitText">Effectuer le Prêt</span>
+                </button>
+            </form>
+        </div>
+
+        <div id="message" class="alert"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            loadMembers();
+            loadBooks();
+            loadLoanTypes();
+
+            document.getElementById('loanForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                createLoan();
+            });
+        });
+
+        async function loadMembers() {
+            try {
+                const response = await fetch('/api/members');
+                const members = await response.json();
+                const select = document.getElementById('memberId');
+
+                members.forEach(member => {
+                    const option = document.createElement('option');
+                    option.value = member.id;
+                    option.textContent = `${member.firstName} ${member.lastName}`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Erreur lors du chargement des membres:', error);
+                showMessage('Erreur lors du chargement des membres', 'error');
+            }
+        }
+
+        async function loadBooks() {
+            try {
+                const response = await fetch('/api/books');
+                const books = await response.json();
+                const select = document.getElementById('bookId');
+
+                books.forEach(book => {
+                    const option = document.createElement('option');
+                    option.value = book.id;
+                    option.textContent = `${book.title} - ${book.author}`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Erreur lors du chargement des livres:', error);
+                showMessage('Erreur lors du chargement des livres', 'error');
+            }
+        }
+
+        async function loadLoanTypes() {
+            try {
+                const response = await fetch('/api/loantypes');
+                const loanTypes = await response.json();
+                const select = document.getElementById('loanTypeId');
+
+                loanTypes.forEach(loanType => {
+                    const option = document.createElement('option');
+                    option.value = loanType.id;
+                    option.textContent = `${loanType.name} (${loanType.duration} jours)`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Erreur lors du chargement des types de prêt:', error);
+                showMessage('Erreur lors du chargement des types de prêt', 'error');
+            }
+        }
+
+        async function createLoan() {
+            const submitBtn = document.getElementById('submitBtn');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const submitText = document.getElementById('submitText');
+            const memberId = document.getElementById('memberId').value;
+            const bookId = document.getElementById('bookId').value;
+            const loanTypeId = document.getElementById('loanTypeId').value;
+
+            if (!memberId || !bookId || !loanTypeId) {
+                showMessage('Veuillez remplir tous les champs', 'error');
+                return;
+            }
+
+            submitBtn.disabled = true;
+            loadingSpinner.style.display = 'flex';
+            submitText.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/loans/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `memberId=${memberId}&bookId=${bookId}&loanTypeId=${loanTypeId}`
+                });
+
+                if (response.ok) {
+                    const loan = await response.json();
+                    showMessage('Prêt effectué avec succès!', 'success');
+                    document.getElementById('loanForm').reset();
+                } else {
+                    const error = await response.text();
+                    showMessage('Erreur lors de la création du prêt: ' + error, 'error');
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                showMessage('Erreur lors de la création du prêt', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                loadingSpinner.style.display = 'none';
+                submitText.style.display = 'inline';
+            }
+        }
+
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.className = `alert alert-${type} show`;
+
+            setTimeout(() => {
+                messageDiv.classList.remove('show');
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
+
