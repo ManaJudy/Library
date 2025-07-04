@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paiement des Pénalités - Bibliothèque</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .card {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 20px 20px 0 0 !important;
+            padding: 2rem;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 50px;
+            padding: 12px 30px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .form-control, .form-select {
+            border-radius: 15px;
+            border: 2px solid #e9ecef;
+            padding: 12px 20px;
+            font-size: 16px;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .penalty-info {
+            background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+        .penalty-amount {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #d63031;
+        }
+        .no-penalty {
+            background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+            color: white;
+        }
+        .member-info {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+        .loading {
+            display: none;
+        }
+        .alert {
+            border-radius: 15px;
+            border: none;
+        }
+    </style>
+</head>
+<body class="gradient-bg">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header text-center">
+                        <h1 class="mb-0">
+                            <i class="fas fa-money-bill-wave me-3"></i>
+                            Paiement des Pénalités
+                        </h1>
+                        <p class="mb-0 mt-2 opacity-75">Gérez vos pénalités de bibliothèque</p>
+                    </div>
+                    <div class="card-body p-4">
+                        <!-- Sélection du membre -->
+                        <div class="mb-4">
+                            <label for="memberSelect" class="form-label">
+                                <i class="fas fa-user me-2"></i>
+                                Sélectionner un membre
+                            </label>
+                            <select class="form-select" id="memberSelect" onchange="selectMember()">
+                                <option value="">Choisir un membre...</option>
+                            </select>
+                        </div>
+
+                        <!-- Informations du membre -->
+                        <div id="memberInfo" class="member-info d-none">
+                            <h5><i class="fas fa-user-circle me-2"></i>Informations du membre</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Nom :</strong> <span id="memberName"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Email :</strong> <span id="memberEmail"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Informations sur la pénalité -->
+                        <div id="penaltyInfo" class="penalty-info d-none">
+                            <div class="text-center">
+                                <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
+                                <h4>Pénalité à payer</h4>
+                                <div class="penalty-amount" id="penaltyAmount">0.00 €</div>
+                            </div>
+                        </div>
+
+                        <!-- Message aucune pénalité -->
+                        <div id="noPenalty" class="penalty-info no-penalty d-none">
+                            <div class="text-center">
+                                <i class="fas fa-check-circle fa-2x mb-3"></i>
+                                <h4>Aucune pénalité</h4>
+                                <p class="mb-0">Ce membre n'a pas de pénalité à payer.</p>
+                            </div>
+                        </div>
+
+                        <!-- Formulaire de paiement -->
+                        <div id="paymentForm" class="d-none">
+                            <hr class="my-4">
+                            <h5><i class="fas fa-credit-card me-2"></i>Paiement</h5>
+                            <div class="mb-3">
+                                <label for="paymentAmount" class="form-label">Montant à payer (€)</label>
+                                <input type="number" class="form-control" id="paymentAmount" step="0.01" min="0" placeholder="0.00">
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Vous pouvez payer partiellement ou entièrement
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-primary btn-lg w-100" onclick="payPenalty()">
+                                <span class="loading spinner-border spinner-border-sm me-2" role="status"></span>
+                                <i class="fas fa-credit-card me-2"></i>
+                                Effectuer le paiement
+                            </button>
+                        </div>
+
+                        <!-- Messages d'alerte -->
+                        <div id="alertContainer" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let members = [];
+        let selectedMember = null;
+
+        // Charger les membres au chargement de la page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadMembers();
+        });
+
+        // Charger tous les membres
+        async function loadMembers() {
+            try {
+                const response = await fetch('/api/members');
+                if (!response.ok) throw new Error('Erreur lors du chargement des membres');
+
+                members = await response.json();
+                populateMemberSelect();
+            } catch (error) {
+                showAlert('Erreur lors du chargement des membres: ' + error.message, 'danger');
+            }
+        }
+
+        // Remplir le select avec les membres
+        function populateMemberSelect() {
+            const select = document.getElementById('memberSelect');
+            select.innerHTML = '<option value="">Choisir un membre...</option>';
+
+            members.forEach(member => {
+                const option = document.createElement('option');
+                option.value = member.id;
+                option.textContent = `${member.id} - ${member.name} ${member.firstName}`;
+                select.appendChild(option);
+            });
+        }
+
+        // Sélectionner un membre
+        async function selectMember() {
+            const selectedId = document.getElementById('memberSelect').value;
+
+            if (!selectedId) {
+                hideAllSections();
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/members/${selectedId}`);
+                if (!response.ok) throw new Error('Membre non trouvé');
+
+                selectedMember = await response.json();
+                displayMemberInfo();
+                displayPenaltyInfo();
+            } catch (error) {
+                showAlert('Erreur lors du chargement du membre: ' + error.message, 'danger');
+            }
+        }
+
+        // Afficher les informations du membre
+        function displayMemberInfo() {
+            document.getElementById('memberName').textContent = `${selectedMember.name} ${selectedMember.firstName}`;
+            document.getElementById('memberEmail').textContent = selectedMember.email;
+            document.getElementById('memberInfo').classList.remove('d-none');
+        }
+
+        // Afficher les informations sur la pénalité
+        function displayPenaltyInfo() {
+            const penaltyAmount = selectedMember.penalityAmount || 0;
+
+            if (penaltyAmount > 0) {
+                document.getElementById('penaltyAmount').textContent = `${penaltyAmount.toFixed(2)} €`;
+                document.getElementById('penaltyInfo').classList.remove('d-none');
+                document.getElementById('noPenalty').classList.add('d-none');
+                document.getElementById('paymentForm').classList.remove('d-none');
+                document.getElementById('paymentAmount').value = penaltyAmount.toFixed(2);
+            } else {
+                document.getElementById('penaltyInfo').classList.add('d-none');
+                document.getElementById('noPenalty').classList.remove('d-none');
+                document.getElementById('paymentForm').classList.add('d-none');
+            }
+        }
+
+        // Payer la pénalité
+        async function payPenalty() {
+            const paymentAmount = parseFloat(document.getElementById('paymentAmount').value);
+
+            if (!paymentAmount || paymentAmount <= 0) {
+                showAlert('Veuillez entrer un montant valide', 'warning');
+                return;
+            }
+
+            if (paymentAmount > selectedMember.penalityAmount) {
+                showAlert('Le montant ne peut pas être supérieur à la pénalité due', 'warning');
+                return;
+            }
+
+            const loadingSpinner = document.querySelector('.loading');
+            const payButton = document.querySelector('.btn-primary');
+
+            try {
+                loadingSpinner.style.display = 'inline-block';
+                payButton.disabled = true;
+
+                const response = await fetch(`/api/members/${selectedMember.id}/pay-penality?amount=${paymentAmount}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) throw new Error('Erreur lors du paiement');
+
+                showAlert(`Paiement de ${paymentAmount.toFixed(2)} € effectué avec succès!`, 'success');
+
+                // Recharger les informations du membre
+                await selectMember();
+
+            } catch (error) {
+                showAlert('Erreur lors du paiement: ' + error.message, 'danger');
+            } finally {
+                loadingSpinner.style.display = 'none';
+                payButton.disabled = false;
+            }
+        }
+
+        // Afficher une alerte
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} alert-dismissible fade show`;
+            alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            alertContainer.appendChild(alert);
+
+            // Supprimer automatiquement après 5 secondes
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
+
+        // Masquer toutes les sections
+        function hideAllSections() {
+            document.getElementById('memberInfo').classList.add('d-none');
+            document.getElementById('penaltyInfo').classList.add('d-none');
+            document.getElementById('noPenalty').classList.add('d-none');
+            document.getElementById('paymentForm').classList.add('d-none');
+            selectedMember = null;
+        }
+    </script>
+</body>
+</html>
