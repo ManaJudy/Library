@@ -7,22 +7,14 @@ import java.time.LocalDate;
 
 @Entity
 @Data
-public class Loan {
+public class Payment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @ManyToOne
-    @JoinColumn(name = "copy_id", nullable = false)
-    private Copy copy;
-
+    private String wayOfPayment;
+    private Double amount;
+    private LocalDate paymentDate;
     @ManyToOne
     @JoinColumn(name = "member_id", nullable = false)
-    private Member memberInLoan;
-
-    private LocalDate loanDate;
-
-    private LocalDate returnDate;
-
-    private boolean returned;
+    private Member memberInPayment;
 }

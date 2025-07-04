@@ -5,10 +5,9 @@ import com.mana.library.entity.Loan;
 import com.mana.library.entity.Member;
 import com.mana.library.exeptionhandler.exeption.EmailAlreadyUsedException;
 import com.mana.library.exeptionhandler.exeption.EntityNotFoundException;
+import com.mana.library.exeptionhandler.exeption.PenalityFoundException;
 import com.mana.library.repository.LoanRepository;
 
-import com.mana.library.entity.Member;
-import com.mana.library.exeptionhandler.exeption.EmailAlreadyUsedException;
 import com.mana.library.repository.MemberRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,6 +16,7 @@ import java.time.LocalDate;
 
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Objects;
 
 
 @Service
@@ -26,6 +26,9 @@ public class MemberService {
 
     @Autowired
     private LoanRepository loanRepository;
+
+    @Autowired
+    private PaymentService paymentService;
 
     public Member findMemberById(Long id) {
         return memberRepository.findById(id)
@@ -43,8 +46,6 @@ public class MemberService {
     public Member createMember(Member member) {
         if (memberRepository.existsByEmail(member.getEmail()))
             throw new EmailAlreadyUsedException("Email : " + member.getEmail() + " is already used.");
-        LocalDate expirationDate = LocalDate.now().plusYears(1);
-        member.setExpirationDate(expirationDate);
         return memberRepository.save(member);
     }
 
@@ -73,6 +74,14 @@ public class MemberService {
         List<Loan> loans = loanRepository.findAllByMemberAndReturnedFalse(member);
         return loans.stream().filter(loan -> loan.getReturnDate().isBefore(today))
                 .anyMatch(loan -> ChronoUnit.DAYS.between(loan.getReturnDate(), today) > 30);
+    }
+
+    public void extendSubscription(Member member) {
+        if (member.getPenaltyAmount() > 0)
+            throw new PenalityFoundException("Member " + member.getName() + " has a penalty to pay before extending subscription.");
+        LocalDate expirationDate = member.getExpirationDate();
+        member.setExpirationDate(Objects.requireNonNullElseGet(expirationDate, LocalDate::now).plusYears(1));
+        memberRepository.save(member);
     }
 
 }

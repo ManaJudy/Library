@@ -31,10 +31,14 @@ public class Member {
     private LocalDate expirationDate;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "memberInLoan", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Loan> loans;
 
     private Double penaltyAmount = 0.0;
 
     private boolean active = true;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "memberInPayment", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Payment> payments;
 }
