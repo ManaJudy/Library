@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -24,9 +25,9 @@ public class Member {
 
     private String address;
 
-    @ManyToOne
-    @JoinColumn(name = "subscription_id", nullable = false)
-    private Subscription subscription;
+    @JsonIgnore
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Subscription> subscriptions = new ArrayList<>();
 
     private LocalDate expirationDate;
 
@@ -41,4 +42,9 @@ public class Member {
     @JsonIgnore
     @OneToMany(mappedBy = "memberInPayment", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Payment> payments;
+
+    // Méthode pour obtenir les abonnements (nécessaire pour ReservationService)
+    public List<Subscription> getSubscriptions() {
+        return subscriptions != null ? subscriptions : new ArrayList<>();
+    }
 }
