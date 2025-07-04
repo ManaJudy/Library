@@ -1,9 +1,12 @@
 package com.mana.library.entity;
 
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Entity
 @Data
@@ -27,4 +30,11 @@ public class Member {
 
     private LocalDate expirationDate;
 
+    @JsonIgnore
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Loan> loans;
+
+    private Double penaltyAmount = 0.0;
+
+    private boolean active = true;
 }

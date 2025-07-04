@@ -1,8 +1,6 @@
 package com.mana.library.entity;
 
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -10,14 +8,16 @@ import java.util.List;
 
 @Entity
 @Data
-public class Subscription {
+public class Book {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String type;
+    private String title;
+
+    private String author;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "subscription", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Member> members;
+    @OneToMany(mappedBy = "book", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Copy> copies;
 }
