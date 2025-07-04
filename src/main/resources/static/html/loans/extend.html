@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Retourner un Prêt - Bibliothèque</title>
+    <title>Étendre un Prêt - Bibliothèque</title>
     <link rel="stylesheet" href="/css/modern-style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -11,11 +11,11 @@
 <div class="container">
     <div class="card">
         <div class="header">
-            <h1>↩️ Retourner un Prêt</h1>
-            <p>Enregistrez le retour d'un livre emprunté</p>
+            <h1>⏳ Étendre un Prêt</h1>
+            <p>Prolongez la durée d'un prêt en cours</p>
         </div>
 
-        <form id="returnForm">
+        <form id="extendForm">
             <div class="form-group">
                 <label for="memberId">👤 Membre</label>
                 <select id="memberId" name="memberId" class="form-control" required>
@@ -35,7 +35,7 @@
                     <span class="spinner"></span>
                     Traitement en cours...
                 </span>
-                <span id="submitText">Retourner le Prêt</span>
+                <span id="submitText">Étendre le Prêt</span>
             </button>
         </form>
     </div>
@@ -56,9 +56,9 @@
             }
         });
 
-        document.getElementById('returnForm').addEventListener('submit', function (e) {
+        document.getElementById('extendForm').addEventListener('submit', function (e) {
             e.preventDefault();
-            returnLoan();
+            extendLoan();
         });
     });
 
@@ -90,7 +90,7 @@
             loans.forEach(loan => {
                 const book = loan.copy.book;
                 const option = document.createElement('option');
-                option.value = loan.id; // On envoie l'ID du prêt, pas du livre
+                option.value = loan.id;
                 option.textContent = `${book.title} - ${book.author}`;
                 select.appendChild(option);
             });
@@ -100,7 +100,7 @@
         }
     }
 
-    async function returnLoan() {
+    async function extendLoan() {
         const submitBtn = document.getElementById('submitBtn');
         const loadingSpinner = document.getElementById('loadingSpinner');
         const submitText = document.getElementById('submitText');
@@ -118,26 +118,26 @@
         submitText.style.display = 'none';
 
         try {
-            const response = await fetch(`/api/loans/return`, {
+            const response = await fetch(`/api/loans/extend`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({id: loanId})
+                body: JSON.stringify({ id: loanId })
             });
 
             if (response.ok) {
                 await response.json();
-                showMessage('Prêt retourné avec succès!', 'success');
-                document.getElementById('returnForm').reset();
+                showMessage('Prêt étendu avec succès!', 'success');
+                document.getElementById('extendForm').reset();
                 resetSelect('bookId', 'Sélectionnez un livre...');
             } else {
                 const error = await response.text();
-                showMessage('Erreur lors du retour du prêt: ' + error, 'error');
+                showMessage('Erreur lors de l\'extension du prêt: ' + error, 'error');
             }
         } catch (error) {
             console.error('Erreur:', error);
-            showMessage('Erreur lors du retour du prêt', 'error');
+            showMessage('Erreur lors de l\'extension du prêt', 'error');
         } finally {
             submitBtn.disabled = false;
             loadingSpinner.style.display = 'none';
@@ -165,3 +165,4 @@
 </script>
 </body>
 </html>
+

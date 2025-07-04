@@ -14,17 +14,5 @@ import java.util.List;
 @Repository
 public interface LoanRepository extends JpaRepository<Loan, Long> {
 
-    List<Loan> findByMemberInLoan(Member member);
-
-    List<Loan> findByReturnDateIsNull();
-
-    List<Loan> findByMemberInLoanAndReturnDateIsNull(Member member);
-
-    long countByBookAndReturnDateIsNull(Book book);
-
-    @Query("SELECT l FROM Loan l WHERE l.dueDate < :currentDate AND l.returnDate IS NULL")
-    List<Loan> findOverdueLoans(@Param("currentDate") LocalDate currentDate);
-
-    @Query("SELECT l FROM Loan l WHERE l.memberInLoan = :member AND l.returnDate IS NULL")
-    List<Loan> findActiveLoansForMember(@Param("member") Member member);
+    List<Loan> findAllByMemberInLoanAndReturnedFalse(Member member);
 }

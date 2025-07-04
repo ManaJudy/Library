@@ -6,12 +6,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/books")
 public class BookController {
 
     @Autowired
     private BookService bookService;
+
+    @GetMapping
+    private ResponseEntity<List<Book>> getAllBooks() {
+        List<Book> books = bookService.findAllBooks();
+        return ResponseEntity.ok(books);
+    }
 
     @GetMapping("/{id}")
     public ResponseEntity<Book> getBookById(@PathVariable Long id) {

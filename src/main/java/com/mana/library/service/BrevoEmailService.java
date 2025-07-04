@@ -1,75 +1,54 @@
 package com.mana.library.service;
 
+import com.mana.library.entity.Member;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class BrevoEmailService {
 
-    @Value("${brevo.api.key:}")
+    @Value("${brevo.api.key}")
     private String apiKey;
 
-    @Value("${brevo.sender.email:noreply@library.com}")
-    private String senderEmail;
+    @Value("${brevo.api.url}")
+    private String apiUrl;
 
-    @Value("${brevo.sender.name:Bibliothèque}")
-    private String senderName;
+    @Value("${spring.mail.username}")
+    private String email;
 
-    private final RestTemplate restTemplate;
+    public void sendMail(Member member, String subject, String content) {
+        RestTemplate restTemplate = new RestTemplate();
 
-    public BrevoEmailService() {
-        this.restTemplate = new RestTemplate();
-    }
+        Map<String, Object> body = new HashMap<>();
 
-    public void sendEmail(String to, String subject, String content) {
+        Map<String, String> sender = new HashMap<>();
+        sender.put("name", "Library");
+        sender.put("email", email); // Doit être validé dans Brevo
+
+        Map<String, String> to = new HashMap<>();
+        to.put("email", member.getEmail());
+        to.put("name", "Utilisateur"); // Tu peux mettre le vrai nom ici si tu l'as
+
+        body.put("sender", sender);
+        body.put("to", Collections.singletonList(to));
+        body.put("subject", subject);
+        body.put("textContent", content);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("api-key", apiKey);
+
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+
         try {
-            if (apiKey == null || apiKey.isEmpty()) {
-                System.out.println("Email simulé envoyé à: " + to);
-                System.out.println("Sujet: " + subject);
-                System.out.println("Contenu: " + content);
-                return;
-            }
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set("api-key", apiKey);
-
-            Map<String, Object> emailData = new HashMap<>();
-            Map<String, String> sender = new HashMap<>();
-            sender.put("email", senderEmail);
-            sender.put("name", senderName);
-            emailData.put("sender", sender);
-
-            Map<String, String> recipient = new HashMap<>();
-            recipient.put("email", to);
-            emailData.put("to", new Map[]{recipient});
-
-            emailData.put("subject", subject);
-            emailData.put("textContent", content);
-
-            HttpEntity<Map<String, Object>> request = new HttpEntity<>(emailData, headers);
-
-            restTemplate.postForEntity(
-                "https://api.brevo.com/v3/smtp/email",
-                request,
-                String.class
-            );
-
-            System.out.println("Email envoyé avec succès à: " + to);
-
+            ResponseEntity<String> response = restTemplate.postForEntity(apiUrl, request, String.class);
+            System.out.println("Email envoyé avec succès : " + response.getBody());
         } catch (Exception e) {
-            System.err.println("Erreur lors de l'envoi de l'email: " + e.getMessage());
-            // En cas d'erreur, afficher le contenu comme simulation
-            System.out.println("Email simulé envoyé à: " + to);
-            System.out.println("Sujet: " + subject);
-            System.out.println("Contenu: " + content);
+            System.err.println("Erreur lors de l'envoi de l'email via API Brevo : " + e.getMessage());
         }
     }
 }

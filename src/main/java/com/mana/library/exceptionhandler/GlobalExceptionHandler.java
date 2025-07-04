@@ -1,10 +1,6 @@
 package com.mana.library.exceptionhandler;
 
-import com.mana.library.exceptionhandler.exception.EmailAlreadyUsedException;
-import com.mana.library.exceptionhandler.exception.PenalityFoundException;
-import com.mana.library.exceptionhandler.exception.PenaltyException;
-import com.mana.library.exceptionhandler.exception.AlreadyLoanCopyException;
-import com.mana.library.exceptionhandler.exception.AccountExpiredException;
+import com.mana.library.exceptionhandler.exception.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.MailException;
@@ -13,6 +9,12 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    @ExceptionHandler({EntityNotFoundException.class})
+    public ResponseEntity<ApiError> handleEntityNotFoundException(EntityNotFoundException e) {
+        ApiError apiError = new ApiError(HttpStatus.NOT_FOUND.value(), e.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiError);
+    }
+
     @ExceptionHandler({EmailAlreadyUsedException.class})
     public ResponseEntity<ApiError> emailAlreadyUsed(EmailAlreadyUsedException e) {
         ApiError apiError = new ApiError(HttpStatus.CONFLICT.value(), e.getMessage());

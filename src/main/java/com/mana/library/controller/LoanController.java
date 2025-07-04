@@ -14,6 +14,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/loans")
 public class LoanController {
@@ -37,13 +40,29 @@ public class LoanController {
         Book book = bookService.findBookById(bookId);
         LoanType loanType = loanTypeService.findByLoanTypeById(loanTypeId);
         Loan loan = loanService.createLoan(member, book, loanType);
+        loan = loanService.extendLoan(loan);
         return ResponseEntity.ok(loan);
     }
 
-    @PostMapping("/return")
-    public ResponseEntity<Loan> returnLoan(@RequestParam Long loanId) {
-        Loan loan = loanService.getLoanById(loanId);
+    @PostMapping("/return/{id}")
+    public ResponseEntity<Loan> returnLoan(@PathVariable Long id) {
+        Loan loan = loanService.getLoanById(id);
         Loan returnedLoan = loanService.returnLoan(loan);
+        loanService.putPenalityIfNecessary(loan);
+        return ResponseEntity.ok(returnedLoan);
+    }
+
+    @GetMapping("/of-member/{id}")
+    public ResponseEntity<List<Loan>> getLoanByMemberId(@PathVariable Long id) {
+        Member member = memberService.findMemberById(id);
+        List<Loan> loans = loanService.getLoanByMember(member);
+        return ResponseEntity.ok(loans);
+    }
+
+    @PostMapping("/extend")
+    public ResponseEntity<Loan> extend(@RequestBody Map<String, Object> data) {
+        Loan loan = loanService.getLoanById(Long.valueOf((String) data.get("id")));
+        loan = loanService.extendLoan(loan);
         return ResponseEntity.ok(loan);
     }
 }

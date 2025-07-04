@@ -328,3 +328,10 @@ body {
         --border-color: #334155;
     }
 }
+
+/* Force white background for inputs, textarea and selects */
+input.form-control,
+textarea.form-control,
+select.form-control {
+    background-color: white !important;
+}
