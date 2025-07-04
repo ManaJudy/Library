@@ -22,6 +22,7 @@ public class MemberController {
     @PostMapping
     public ResponseEntity<Member> createMember(@RequestBody Member member) {
         Member savedMember = memberService.createMember(member);
+        Member savedMember = memberService.saveMember(member);
         brevoEmailService.sendMail(savedMember, "Library Membership Confirmation",
                 "Dear " + savedMember.getName() + ",\n\nThank you for registering with our library. Your membership is now active.\n\nBest regards,\nLibrary Team");
         return new ResponseEntity<>(savedMember, HttpStatus.CREATED);
@@ -45,4 +46,5 @@ public class MemberController {
         memberService.payPenalty(member, amount);
         return new ResponseEntity<>("Penality paid", HttpStatus.CREATED);
     }
+
 }
