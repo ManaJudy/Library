@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Réserver un Livre - Bibliothèque</title>
+    <link rel="stylesheet" href="/css/modern-style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                <h1>📚 Réserver un Livre</h1>
+                <p>Réservez un livre indisponible et recevez une notification dès qu'il sera disponible</p>
+            </div>
+
+            <form id="reservationForm">
+                <div class="form-group">
+                    <label for="memberId">👤 Membre</label>
+                    <select id="memberId" name="memberId" class="form-control" required>
+                        <option value="">Sélectionnez un membre...</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="bookSearch">🔍 Rechercher un livre</label>
+                    <div class="search-container">
+                        <input type="text" id="bookSearch" class="form-control" placeholder="Tapez le titre ou l'auteur du livre..." autocomplete="off">
+                        <div id="searchResults" class="search-results"></div>
+                    </div>
+                    <input type="hidden" id="bookId" name="bookId">
+                </div>
+
+                <div id="bookInfo" class="info-card" style="display: none;">
+                    <h3>📖 Livre sélectionné</h3>
+                    <div id="bookDetails"></div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="submitBtn">
+                    <span class="loading" id="loadingSpinner" style="display: none;">
+                        <span class="spinner"></span>
+                        Traitement en cours...
+                    </span>
+                    <span id="submitText">Réserver le Livre</span>
+                </button>
+            </form>
+        </div>
+
+        <div id="message" class="alert"></div>
+    </div>
+
+    <script>
+        let books = [];
+        let selectedBook = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadMembers();
+            loadBooks();
+
+            const bookSearch = document.getElementById('bookSearch');
+            const searchResults = document.getElementById('searchResults');
+
+            bookSearch.addEventListener('input', function() {
+                const query = this.value.toLowerCase();
+                if (query.length < 2) {
+                    searchResults.style.display = 'none';
+                    return;
+                }
+
+                const filteredBooks = books.filter(book =>
+                    book.title.toLowerCase().includes(query) ||
+                    book.author.toLowerCase().includes(query)
+                );
+
+                displaySearchResults(filteredBooks);
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.search-container')) {
+                    searchResults.style.display = 'none';
+                }
+            });
+
+            document.getElementById('reservationForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                createReservation();
+            });
+        });
+
+        async function loadMembers() {
+            try {
+                const response = await fetch('/api/members');
+                const members = await response.json();
+                const select = document.getElementById('memberId');
+
+                members.forEach(member => {
+                    const option = document.createElement('option');
+                    option.value = member.id;
+                    option.textContent = `${member.firstName} ${member.lastName}`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Erreur lors du chargement des membres:', error);
+                showMessage('Erreur lors du chargement des membres', 'error');
+            }
+        }
+
+        async function loadBooks() {
+            try {
+                const response = await fetch('/api/books');
+                books = await response.json();
+            } catch (error) {
+                console.error('Erreur lors du chargement des livres:', error);
+                showMessage('Erreur lors du chargement des livres', 'error');
+            }
+        }
+
+        function displaySearchResults(filteredBooks) {
+            const searchResults = document.getElementById('searchResults');
+            searchResults.innerHTML = '';
+
+            if (filteredBooks.length === 0) {
+                searchResults.innerHTML = '<div class="search-result-item">Aucun livre trouvé</div>';
+            } else {
+                filteredBooks.forEach(book => {
+                    const item = document.createElement('div');
+                    item.className = 'search-result-item';
+                    item.innerHTML = `
+                        <div style="font-weight: 600; color: var(--text-primary);">${book.title}</div>
+                        <div style="color: var(--text-secondary); font-size: 0.875rem;">par ${book.author}</div>
+                    `;
+                    item.addEventListener('click', function() {
+                        selectBook(book);
+                    });
+                    searchResults.appendChild(item);
+                });
+            }
+
+            searchResults.style.display = 'block';
+        }
+
+        function selectBook(book) {
+            selectedBook = book;
+            document.getElementById('bookId').value = book.id;
+            document.getElementById('bookSearch').value = book.title;
+            document.getElementById('searchResults').style.display = 'none';
+
+            const bookInfo = document.getElementById('bookInfo');
+            const bookDetails = document.getElementById('bookDetails');
+
+            bookDetails.innerHTML = `
+                <div class="info-item">
+                    <span class="info-label">Titre:</span>
+                    <span class="info-value">${book.title}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Auteur:</span>
+                    <span class="info-value">${book.author}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">ISBN:</span>
+                    <span class="info-value">${book.isbn}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Genre:</span>
+                    <span class="info-value">${book.genre}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Année:</span>
+                    <span class="info-value">${book.publicationYear}</span>
+                </div>
+            `;
+
+            bookInfo.style.display = 'block';
+        }
+
+        async function createReservation() {
+            const submitBtn = document.getElementById('submitBtn');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const submitText = document.getElementById('submitText');
+            const memberId = document.getElementById('memberId').value;
+            const bookId = document.getElementById('bookId').value;
+
+            if (!memberId || !bookId) {
+                showMessage('Veuillez sélectionner un membre et un livre', 'error');
+                return;
+            }
+
+            submitBtn.disabled = true;
+            loadingSpinner.style.display = 'flex';
+            submitText.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/reservations/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `memberId=${memberId}&bookId=${bookId}`
+                });
+
+                const result = await response.text();
+
+                if (response.ok) {
+                    let messageType = 'success';
+                    if (result.includes('Disponible pour emprunt immédiat')) {
+                        messageType = 'info';
+                    } else if (result.includes('Non éligible') || result.includes('déjà en cours')) {
+                        messageType = 'warning';
+                    }
+
+                    showMessage(result, messageType);
+
+                    if (result.includes('succès')) {
+                        document.getElementById('reservationForm').reset();
+                        document.getElementById('bookInfo').style.display = 'none';
+                        selectedBook = null;
+                    }
+                } else {
+                    showMessage('Erreur lors de la création de la réservation: ' + result, 'error');
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                showMessage('Erreur lors de la création de la réservation', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                loadingSpinner.style.display = 'none';
+                submitText.style.display = 'inline';
+            }
+        }
+
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.className = `alert alert-${type} show`;
+
+            setTimeout(() => {
+                messageDiv.classList.remove('show');
+            }, 7000);
+        }
+    </script>
+</body>
+</html>

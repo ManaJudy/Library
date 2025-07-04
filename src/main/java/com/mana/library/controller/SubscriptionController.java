@@ -3,23 +3,38 @@ package com.mana.library.controller;
 import com.mana.library.entity.Subscription;
 import com.mana.library.service.SubscriptionService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/subscriptions")
 public class SubscriptionController {
+
     @Autowired
     private SubscriptionService subscriptionService;
 
-    @GetMapping
-    public ResponseEntity<List<Subscription>> getSubscriptions() {
-        List<Subscription> subscriptions = subscriptionService.findAllSubscriptions();
-        return new ResponseEntity<>(subscriptions, HttpStatus.OK);
+    @PostMapping("/extend")
+    public ResponseEntity<Subscription> extendSubscription(
+            @RequestParam Long memberId,
+            @RequestParam Subscription.SubscriptionType subscriptionType,
+            @RequestParam Double amount) {
+        try {
+            Subscription subscription = subscriptionService.extendSubscription(memberId, subscriptionType, amount);
+            return ResponseEntity.ok(subscription);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
+
+    @GetMapping("/member/{memberId}")
+    public ResponseEntity<List<Subscription>> getMemberSubscriptions(@PathVariable Long memberId) {
+        try {
+            List<Subscription> subscriptions = subscriptionService.getMemberSubscriptions(memberId);
+            return ResponseEntity.ok(subscriptions);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(null);
+        }
     }
 }
