@@ -1,4 +1,4 @@
-package com.mana.library.exeptionhandler.exeption;
+package com.mana.library.exceptionhandler.exception;
 
 public class EntityNotFoundException extends RuntimeException {
     public EntityNotFoundException(String message) {
