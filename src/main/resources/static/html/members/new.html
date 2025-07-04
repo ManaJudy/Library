@@ -1,24 +1,154 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Nouveau Membre - Bibliothèque</title>
-    <link rel="stylesheet" href="/css/modern-style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/modern-style.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 </head>
 <body>
-    <div class="container">
-        <div class="card">
-            <div class="header">
-                <h1>👤 Nouveau Membre</h1>
-                <p>Créez un nouveau compte membre pour la bibliothèque</p>
+<div class="container">
+    <div class="card">
+        <div class="header">
+            <h1>👤 Nouveau Membre</h1>
+            <p>Créez un nouveau compte membre pour la bibliothèque</p>
+        </div>
+
+        <form id="memberForm">
+            <div class="form-group">
+                <label for="firstName">👤 Prénom</label>
+                <input type="text" id="firstName" name="firstName" class="form-control" placeholder="Entrez le prénom" required />
             </div>
 
-            <form id="memberForm">
-                <div class="form-group">
-                    <label for="firstName">👤 Prénom</label>
-                    <input type="text" id="firstName" name="firstName" class="form-control" placeholder="Entrez le prénom" required>
-                </div>
+            <div class="form-group">
+                <label for="name">👤 Nom</label>
+                <input type="text" id="name" name="name" class="form-control" placeholder="Entrez le nom" required />
+            </div>
 
-                <div class="form-group
+            <div class="form-group">
+                <label for="email">📧 Email</label>
+                <input type="email" id="email" name="email" class="form-control" placeholder="Entrez l'email" required />
+            </div>
+
+            <div class="form-group">
+                <label for="address">🏠 Adresse</label>
+                <textarea id="address" name="address" class="form-control" placeholder="Entrez l'adresse complète" required></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="subscription">📚 Type d'abonnement</label>
+                <select id="subscription" name="subscription" class="form-control" required>
+                    <option value="">Chargement...</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="wayOfPayment">💳 Mode de paiement</label>
+                <select id="wayOfPayment" name="wayOfPayment" class="form-control" required>
+                    <option value="">Sélectionnez un mode de paiement</option>
+                    <option value="CASH">Espèces</option>
+                    <option value="CARD">Carte bancaire</option>
+                    <option value="TRANSFER">Virement</option>
+                    <option value="CHECK">Chèque</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="amount">💰 Montant</label>
+                <input type="number" id="amount" name="amount" step="0.01" class="form-control" placeholder="Entrez le montant" required />
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="btn btn-primary">Enregistrer</button>
+                <a href="/html/members/list.html" class="btn btn-secondary">Annuler</a>
+            </div>
+        </form>
+
+        <div id="message" class="alert" style="display: none;"></div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const memberForm = document.getElementById('memberForm');
+        const messageDiv = document.getElementById('message');
+        const subscriptionSelect = document.getElementById('subscription');
+
+        // Charger les abonnements depuis /api/subscriptions
+        fetch('/api/subscriptions')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erreur lors du chargement des abonnements');
+                }
+                return response.json();
+            })
+            .then(subscriptions => {
+                subscriptionSelect.innerHTML = '<option value="">Sélectionnez un abonnement</option>';
+                subscriptions.forEach(sub => {
+                    const option = document.createElement('option');
+                    option.value = sub.id;
+                    option.textContent = `${sub.name} (${sub.maxLoans} prêts max)`;
+                    subscriptionSelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                subscriptionSelect.innerHTML = '<option value="">Erreur de chargement</option>';
+                console.error(error);
+            });
+
+        memberForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const member = {
+                firstName: document.getElementById('firstName').value,
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                address: document.getElementById('address').value,
+                subscription: {
+                    id: parseInt(subscriptionSelect.value)
+                }
+            };
+
+            const wayOfPayment = document.getElementById('wayOfPayment').value;
+            const amount = document.getElementById('amount').value;
+
+            const payload = {
+                member: member,
+                wayOfPayment: wayOfPayment,
+                amount: parseFloat(amount)
+            };
+
+            fetch('/api/members', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erreur lors de la création du membre');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    messageDiv.textContent = 'Membre créé avec succès !';
+                    messageDiv.className = 'alert alert-success';
+                    messageDiv.style.display = 'block';
+
+                    // Décommenter pour redirection automatique après 2s
+                    // setTimeout(() => {
+                    //     window.location.href = '/html/members/list.html';
+                    // }, 2000);
+                })
+                .catch(error => {
+                    messageDiv.textContent = error.message;
+                    messageDiv.className = 'alert alert-danger';
+                    messageDiv.style.display = 'block';
+                });
+        });
+    });
+</script>
+</body>
+</html>

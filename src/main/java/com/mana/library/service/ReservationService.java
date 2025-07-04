@@ -45,9 +45,7 @@ public class ReservationService {
             .orElseThrow(() -> new RuntimeException("Membre non trouvé"));
 
         // Vérification de l'éligibilité de l'adhérent
-        if (!isMemberEligible(member)) {
-            return "Non éligible à la réservation";
-        }
+
 
         // Vérification du livre
         Book book = bookRepository.findById(bookId)
@@ -76,20 +74,8 @@ public class ReservationService {
         return "Réservation créée avec succès";
     }
 
-    private boolean isMemberEligible(Member member) {
-        // Vérifier si le membre a un abonnement actif
-        return member.getSubscriptions().stream()
-            .anyMatch(subscription -> subscription.getEndDate().isAfter(LocalDateTime.now()));
-    }
-
     private boolean isBookAvailable(Book book) {
-        // Compter les exemplaires disponibles
-        List<Copy> availableCopies = copyRepository.findByBookAndStatus(book, Copy.CopyStatus.AVAILABLE);
-
-        // Compter les prêts actifs
-        long activeLoans = loanRepository.countByBookAndReturnDateIsNull(book);
-
-        return availableCopies.size() > activeLoans;
+        return copyRepository.findFirstCopyNotLoaned(book).isPresent();
     }
 
     public void processExpiredReservations() {
@@ -112,7 +98,7 @@ public class ReservationService {
                 List<Reservation> queueReservations = reservationRepository
                     .findActiveReservationsByBookOrderByDate(reservation.getBook(), LocalDateTime.now());
 
-                if (!queueReservations.isEmpty() && queueReservations.getFirst().getId().equals(reservation.getId())) {
+                if (!queueReservations.isEmpty() && queueReservations.get(0).getId().equals(reservation.getId())) {
                     sendBookAvailableNotification(reservation);
                     reservation.setNotificationSent(true);
                     reservationRepository.save(reservation);
@@ -165,7 +151,7 @@ public class ReservationService {
                     reservation.getExpiryDate().toLocalDate()
                 );
 
-            emailService.sendEmail(reservation.getMember().getEmail(), subject, content);
+            emailService.sendMail(reservation.getMember(), subject, content);
         } catch (Exception e) {
             System.err.println("Erreur lors de l'envoi de l'email de confirmation : " + e.getMessage());
         }
@@ -188,7 +174,7 @@ public class ReservationService {
                     reservation.getExpiryDate().toLocalDate()
                 );
 
-            emailService.sendEmail(reservation.getMember().getEmail(), subject, content);
+            emailService.sendMail(reservation.getMember(), subject, content);
         } catch (Exception e) {
             System.err.println("Erreur lors de l'envoi de l'email de disponibilité : " + e.getMessage());
         }

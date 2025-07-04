@@ -49,26 +49,6 @@ public class MemberService {
         return memberRepository.save(member);
     }
 
-    public double calculatePenality(Member member) {
-        double penalty = 0.0;
-        List<Loan> loans = loanRepository.findAllByMemberInLoanAndReturnedFalse(member);
-        LocalDate today = LocalDate.now();
-        for (Loan loan : loans)
-            if (loan.getReturnDate().isBefore(today)) {
-                long daysOverdue = ChronoUnit.DAYS.between(loan.getReturnDate(), today);
-                penalty += daysOverdue * 0.5;
-            }
-        return penalty;
-    }
-
-    public void payPenalty(Member member, double amount) {
-        if (amount < 0) throw new IllegalArgumentException("Amount must be positive.");
-        double currentPenalty = member.getPenaltyAmount();
-        if (amount > currentPenalty) throw new IllegalArgumentException("Amount exceeds current penalty.");
-        member.setPenaltyAmount(currentPenalty - amount);
-        memberRepository.save(member);
-    }
-
     public boolean shouldBanMember(Member member) {
         LocalDate today = LocalDate.now();
         List<Loan> loans = loanRepository.findAllByMemberInLoanAndReturnedFalse(member);
@@ -77,11 +57,12 @@ public class MemberService {
     }
 
     public void extendSubscription(Member member) {
-        if (member.getPenaltyAmount() > 0)
+        if (member.getPenalty() != null)
             throw new PenalityFoundException("Member " + member.getName() + " has a penalty to pay before extending subscription.");
         LocalDate expirationDate = member.getExpirationDate();
         member.setExpirationDate(Objects.requireNonNullElseGet(expirationDate, LocalDate::now).plusYears(1));
         memberRepository.save(member);
     }
+
 
 }

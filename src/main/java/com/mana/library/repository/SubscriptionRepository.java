@@ -14,13 +14,4 @@ import java.util.Optional;
 @Repository
 public interface SubscriptionRepository extends JpaRepository<Subscription, Long> {
 
-    List<Subscription> findByMember(Member member);
-
-    List<Subscription> findByMemberOrderByEndDateDesc(Member member);
-
-    @Query("SELECT s FROM Subscription s WHERE s.member = :member AND s.endDate > :currentDate AND s.active = true")
-    Optional<Subscription> findActiveSubscriptionByMember(@Param("member") Member member, @Param("currentDate") LocalDateTime currentDate);
-
-    @Query("SELECT s FROM Subscription s WHERE s.endDate < :currentDate AND s.active = true")
-    List<Subscription> findExpiredSubscriptions(@Param("currentDate") LocalDateTime currentDate);
 }

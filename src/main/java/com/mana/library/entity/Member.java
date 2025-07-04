@@ -1,12 +1,10 @@
 package com.mana.library.entity;
 
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -25,9 +23,9 @@ public class Member {
 
     private String address;
 
-    @JsonIgnore
-    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Subscription> subscriptions = new ArrayList<>();
+    @ManyToOne
+    @JoinColumn(name = "subscription_id", nullable = false)
+    private Subscription subscription;
 
     private LocalDate expirationDate;
 
@@ -35,7 +33,7 @@ public class Member {
     @OneToMany(mappedBy = "memberInLoan", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Loan> loans;
 
-    private Double penaltyAmount = 0.0;
+    private LocalDate penalty = null;
 
     private boolean active = true;
 
@@ -43,8 +41,8 @@ public class Member {
     @OneToMany(mappedBy = "memberInPayment", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Payment> payments;
 
-    // Méthode pour obtenir les abonnements (nécessaire pour ReservationService)
-    public List<Subscription> getSubscriptions() {
-        return subscriptions != null ? subscriptions : new ArrayList<>();
+    public boolean isPenality() {
+        return penalty == null || penalty.isAfter(LocalDate.now());
     }
+
 }
